@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  
+  web:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./WebFrontend/Dockerfile
+    volumes:
+      - "web-storage:/app"
+    ports:
+      - "10002:8080"
+  
+  api:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./Api/Dockerfile
+    ports:
+      - "10001:8080"
+      - "10011:8081"
+    volumes:
+      - "api-storage:/app"
+    
+  database:
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - "db-storage:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_USER: library
+      POSTGRES_PASSWORD: Heslo1234.
+      POSTGRES_DB: LibraryData
+    ports:
+      - "10000:5432"
+
+volumes:
+  db-storage:
+    driver: local
+  api-storage:
+    driver: local
+  web-storage:
+    driver: local

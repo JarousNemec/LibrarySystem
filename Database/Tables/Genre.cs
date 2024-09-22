@@ -1,0 +1,12 @@
+﻿namespace Database.Tables;
+
+public class Genre
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; }
+    /*
+o GenreId
+o GenreName
+    */
+}
