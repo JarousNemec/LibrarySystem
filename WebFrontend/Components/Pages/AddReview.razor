@@ -1,0 +1,95 @@
+﻿@page "/AddReview/{id}"
+@using System.Diagnostics
+@using System.Net
+@using Database.Tables
+@using Newtonsoft.Json
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor Context
+@rendermode InteractiveServer
+
+<h3>AddReview</h3>
+<EditForm Model="Input" asp-route-returnUrl="/" method="post" OnValidSubmit="AddComment" FormName="Book review">
+    <div class="form-floating mb-3">
+        <InputText @bind-Value="Input.Text" class="form-control" aria-required="true" placeholder="Very gut kniha..."/>
+        <label for="text">Text</label>
+        <ValidationMessage For="() => Input.Text" class="text-danger"/>
+    </div>
+    <div class="form-floating mb-3">
+        <InputNumber @bind-Value="Input.Rating" class="form-control" aria-required="true" placeholder="10"/>
+        <label for="rating">Rating</label>
+        <ValidationMessage For="() => Input.Rating" class="text-danger"/>
+    </div>
+    <button type="submit" class="w-100 btn btn-lg btn-primary">Add comment</button>
+</EditForm>
+@code {
+    [SupplyParameterFromForm] private CommentData Input { get; set; } = new();
+    
+    [Parameter] public string Id { get; set; }
+    private Member? _member;
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userId = Context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    var apikey = Configuration["ApiKey"] ?? string.Empty;
+                    client.Headers["ApiKey"] = apikey;
+                    
+                    var url = $"{Configuration["ApiBaseUrl"]}/GetMemberByUserId?id=" + userId;
+
+                    var response = client.DownloadString(url);
+                    _member = JsonConvert.DeserializeObject<Member>(response) ?? new Member();
+                    StateHasChanged();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                NavigationManager.NavigateTo("Error");
+            }
+        }
+    }
+
+    private void AddComment(EditContext obj)
+    {
+        
+        try
+        {
+            var review = new Review()
+            {
+                Id = Guid.NewGuid(),
+                BookId = Guid.Parse(Id),
+                MemberId = _member.Id,
+                Comment = Input.Text,
+                Rating = Input.Rating,
+                ReviewDate = DateTime.Now
+            };
+            using (var client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                var url = $"{Configuration["ApiBaseUrl"]}/CreateReview";
+                var data = JsonConvert.SerializeObject(review);
+                var response = client.UploadString(url, HttpMethods.Post, data);
+                StateHasChanged();
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+    private sealed class CommentData
+    {
+        public string Text { get; set; }
+        public float Rating { get; set; }
+    }
+}

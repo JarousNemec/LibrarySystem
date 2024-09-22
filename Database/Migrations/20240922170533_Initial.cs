@@ -84,7 +84,7 @@ namespace Database.Migrations
                     FirstName = table.Column<string>(type: "text", nullable: false),
                     LastName = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
-                    MembershipDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    MembershipDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -207,7 +207,7 @@ namespace Database.Migrations
                     AuthorId = table.Column<Guid>(type: "uuid", nullable: false),
                     GenreId = table.Column<Guid>(type: "uuid", nullable: false),
                     PublishedDate = table.Column<DateOnly>(type: "date", nullable: false),
-                    ISBN = table.Column<string>(type: "text", nullable: false)
+                    Isbn = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -233,8 +233,8 @@ namespace Database.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     BookId = table.Column<Guid>(type: "uuid", nullable: false),
                     MemberId = table.Column<Guid>(type: "uuid", nullable: false),
-                    LoanDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ReturnDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    LoanDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    ReturnDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -262,7 +262,7 @@ namespace Database.Migrations
                     MemberId = table.Column<Guid>(type: "uuid", nullable: false),
                     Rating = table.Column<float>(type: "real", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: false),
-                    ReviewDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    ReviewDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
                 },
                 constraints: table =>
                 {

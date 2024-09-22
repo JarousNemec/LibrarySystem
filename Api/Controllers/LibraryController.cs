@@ -175,7 +175,7 @@ public class LibraryController : Controller
 
     public IActionResult GetBooksByAuthor(Guid id)
     {
-        return Json(_database.GetBooksByGenre(id));
+        return Json(_database.GetBooksByAuthor(id));
     }
 
     public IActionResult GetBooksByGenre(Guid id)
@@ -187,21 +187,31 @@ public class LibraryController : Controller
     {
         return Json(_database.ReadAllBooks());
     }
-
-    public IActionResult GetMemberLoanedBooks(Guid memberId)
+    
+    public IActionResult GetAllGenres()
     {
-        return Json(_database.GetMemberLoans(memberId));
+        return Json(_database.GetAllGenres());
+    }
+    
+    public IActionResult GetAllAuthors()
+    {
+        return Json(_database.GetAllAuthors());
+    }
+
+    public IActionResult GetMemberLoanedBooks(Guid id)
+    {
+        return Json(_database.GetMemberLoans(id));
     }
 
     //reviews
-    public IActionResult GetAllBookReviews(Guid bookId)
+    public IActionResult GetAllBookReviews(Guid id)
     {
-        return Json(_database.GetAllBookReviews(bookId));
+        return Json(_database.GetAllBookReviews(id));
     }
     
     //users
-    public IActionResult GetMemberByUserId(string userId)
+    public IActionResult GetMemberByUserId(string id)
     {
-        return Json(_database.GetMemberByUserId(userId));
+        return Json(_database.GetMemberByUserId(id));
     }
 }

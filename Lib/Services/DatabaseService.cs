@@ -419,6 +419,16 @@ public class DatabaseService : IDatabaseService
         return _database.Books.Include(x => x.Author).Include(x => x.Genre).ToArray();
     }
 
+    public Genre?[] GetAllGenres()
+    {
+        return _database.Genres.ToArray();
+    }
+
+    public Author?[] GetAllAuthors()
+    {
+        return _database.Authors.ToArray();
+    }
+
     public Loan?[] GetMemberLoans(Guid memberId)
     {
         return _database.Loans.Include(x => x.Book).Include(x => x.Member).Where(x => x.MemberId == memberId).ToArray();

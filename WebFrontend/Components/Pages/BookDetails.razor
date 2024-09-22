@@ -1,0 +1,121 @@
+﻿@page "/BookDetails/{id}"
+@using System.Diagnostics
+@using System.Net
+@using Database.Tables
+@using Newtonsoft.Json
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor Context
+@rendermode  InteractiveServer
+
+@if (_book != null)
+{
+    <h3>BookDetails</h3>
+    <div style="border: 3px black solid; margin: 5px; padding: 5px">
+        <h3>@_book.Title</h3>
+        <img src=@(Random.Shared.Next(1, 10) > 5 ? "book1.jpg" : "book2.jpg") alt="book image" height="100px" width="100px"/>
+        <p>Genre: @_book.Genre.Name</p>
+        <p>Author: @_book.Author.Name</p>
+        <p>Published: @_book.PublishedDate.ToString()</p>
+        <p>ISBN: @_book.Isbn</p>
+        <button class="bth btn-info btn-primary" @onclick="AddReview">Write comment...</button>
+        <button class="bth btn-info btn-primary" @onclick="LoanBook">Loan book...</button>
+        @foreach (var review in _reviews)
+        {
+            <div style="border: 3px black solid; border-radius: 10px; margin-top: 5px; padding: 5px">
+                <div style="display: flex">
+                    <img src="user.jpg" alt="user image" height="100px" width="100px"/>
+                    <div style="padding: 10px">
+                        <h3>@review.Member.FirstName @review.Member.LastName</h3>
+                        <h5>@review.ReviewDate</h5>
+                    </div>
+                </div>
+                <p>Comment: @review.Comment</p>
+                <p>Rating: @review.Rating</p>
+            </div>
+        }
+
+    </div>
+}
+
+@code {
+    [Parameter] public string? Id { get; set; }
+
+    private Book? _book;
+    private List<Review> _reviews = new();
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    var apikey = Configuration["ApiKey"] ?? string.Empty;
+                    client.Headers["ApiKey"] = apikey;
+
+                    var urlDetail = $"{Configuration["ApiBaseUrl"]}/GetBook?id=" + Id;
+                    var urlReviews = $"{Configuration["ApiBaseUrl"]}/GetAllBookReviews?id=" + Id;
+
+                    var response = client.DownloadString(urlDetail);
+                    _book = JsonConvert.DeserializeObject<Book>(response) ?? new Book();
+
+                    response = client.DownloadString(urlReviews);
+                    _reviews = JsonConvert.DeserializeObject<List<Review>>(response) ?? new List<Review>();
+
+                    StateHasChanged();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                NavigationManager.NavigateTo("Error");
+            }
+        }
+    }
+
+    private void AddReview()
+    {
+        NavigationManager.NavigateTo("AddReview/" + Id);
+    }
+
+    private void LoanBook()
+    {
+        try
+        {
+            using (var client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+
+                var userId = Context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                var urlMember = $"{Configuration["ApiBaseUrl"]}/GetMemberByUserId?id=" + userId;
+
+                var response = client.DownloadString(urlMember);
+                var member = JsonConvert.DeserializeObject<Member>(response) ?? new Member();
+                var loan = new Loan()
+                {
+                    Id = Guid.NewGuid(),
+                    BookId = Guid.Parse(Id),
+                    LoanDate = DateTime.Now,
+                    MemberId = member.Id,
+                };
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                var url = $"{Configuration["ApiBaseUrl"]}/CreateLoan";
+                var data = JsonConvert.SerializeObject(loan);
+                response = client.UploadString(url, HttpMethods.Post, data);
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+}
+

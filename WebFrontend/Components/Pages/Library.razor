@@ -1,0 +1,160 @@
+﻿@page "/"
+@using System.Diagnostics
+@using System.Net
+@using Database.Tables
+@using Microsoft.AspNetCore.Authorization
+@using Newtonsoft.Json
+@attribute [Authorize]
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
+
+<h3>Library</h3>
+@if (_authors.Count > 0)
+{
+    <EditForm Model="Input" asp-route-returnUrl="/" method="post" OnValidSubmit="SearchByTitle" FormName="titles">
+        <div class="form-floating mb-3">
+            <InputText @bind-Value="Input.SearchText" class="form-control"/>
+            <label for="text">Enter title for searching....</label>
+            <ValidationMessage For="() => Input.SearchText" class="text-danger"/>
+        </div>
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Search by title</button>
+    </EditForm>
+
+    <EditForm Model="Input" asp-route-returnUrl="/" method="post" OnValidSubmit="SearchByGenre" FormName="genres">
+        <div class="form-floating mb-3">
+            <InputSelect class="form-select" @bind-Value="Input.SearchGenre">
+                @foreach (var genre in _genres)
+                {
+                    <option value="@genre.Id">@genre.Name</option>
+                }
+            </InputSelect>
+            <label for="genres">Select genre for searching....</label>
+            <ValidationMessage For="() => Input.SearchGenre" class="text-danger"/>
+        </div>
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Search by genre</button>
+    </EditForm>
+
+    <EditForm Model="@Input" OnValidSubmit="SearchByAuthor" FormName="authors">
+        <div class="form-floating mb-3">
+            <InputSelect @bind-Value="Input.SearchAuthor" class="form-select">
+                @foreach (var author in _authors)
+                {
+                    <option value="@author.Id">@author.Name</option>
+                }
+            </InputSelect>
+            <label for="authors">Select author for searching....</label>
+        </div>
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Search by author</button>
+    </EditForm>
+}
+<div style="display: flex">
+    @foreach (var book in _books)
+    {
+        <div style="border: 3px black solid; border-radius: 10px; margin: 5px; padding: 5px">
+            <h3>@book.Title</h3>
+            <img src=@(Random.Shared.Next(1, 10) > 5 ? "book1.jpg" : "book2.jpg") alt="book image" height="100px" width="100px"/>
+            <p>Genre: @book.Genre.Name</p>
+            <p>Author: @book.Author.Name</p>
+            <p>Published: @book.PublishedDate.ToString()</p>
+            <button class="bth btn-info btn-primary" @onclick="() => { OpenBookDetails(book.Id); }">Details</button>
+        </div>
+    }
+</div>
+
+@code {
+
+
+    [SupplyParameterFromForm] private InputModel Input { get; set; } = new();
+    private List<Book> _books = new();
+    private List<Genre> _genres = new();
+    private List<Author> _authors = new();
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            using (WebClient client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+                var urlAllBooks = $"{Configuration["ApiBaseUrl"]}/GetAllBooks";
+                var urlAllGenres = $"{Configuration["ApiBaseUrl"]}/GetAllGenres";
+                var urlAllAuthors = $"{Configuration["ApiBaseUrl"]}/GetAllAuthors";
+
+                var response = client.DownloadString(urlAllBooks);
+                _books = JsonConvert.DeserializeObject<List<Book>>(response) ?? new List<Book>();
+
+                response = client.DownloadString(urlAllGenres);
+                _genres = JsonConvert.DeserializeObject<List<Genre>>(response) ?? new List<Genre>();
+
+                response = client.DownloadString(urlAllAuthors);
+                _authors = JsonConvert.DeserializeObject<List<Author>>(response) ?? new List<Author>();
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+    private void OpenBookDetails(Guid id)
+    {
+        NavigationManager.NavigateTo("BookDetails/" + id);
+    }
+
+    private void SearchByTitle(EditContext obj)
+    {
+        var url = $"{Configuration["ApiBaseUrl"]}/GetBooksByName?text=" + Input.SearchText;
+        if (string.IsNullOrEmpty(Input.SearchText))
+            url = $"{Configuration["ApiBaseUrl"]}/GetAllBooks";
+        LoadBooks(url);
+    }
+
+    private void SearchByGenre(EditContext obj)
+    {
+        var url = $"{Configuration["ApiBaseUrl"]}/GetBooksByGenre?id=" + Input.SearchGenre;
+        if (string.IsNullOrEmpty(Input.SearchGenre))
+            url = $"{Configuration["ApiBaseUrl"]}/GetAllBooks";
+        LoadBooks(url);
+    }
+
+    private void SearchByAuthor(EditContext obj)
+    {
+        var url = $"{Configuration["ApiBaseUrl"]}/GetBooksByAuthor?id=" + Input.SearchAuthor;
+        if (string.IsNullOrEmpty(Input.SearchAuthor))
+            url = $"{Configuration["ApiBaseUrl"]}/GetAllBooks";
+        LoadBooks(url);
+    }
+
+    private void LoadBooks(string url)
+    {
+        try
+        {
+            using (WebClient client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+                var response = client.DownloadString(url);
+                _books = JsonConvert.DeserializeObject<List<Book>>(response) ?? new List<Book>();
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+    private sealed class InputModel
+    {
+        public string SearchText { get; set; }
+        public string SearchGenre { get; set; }
+        public string SearchAuthor { get; set; }
+    }
+
+}

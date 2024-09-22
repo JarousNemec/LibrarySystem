@@ -1,0 +1,93 @@
+﻿@page "/Loans"
+@using System.Diagnostics
+@using System.Net
+@using Database.Tables
+@using Newtonsoft.Json
+@inject IConfiguration Configuration
+@inject IHttpContextAccessor Context
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+<h3>Your current loans</h3>
+
+<div style="display: flex">
+    @foreach (var loan in _memberLoans)
+    {
+        <div style="border: 3px black solid; border-radius: 10px; margin: 5px; padding: 5px">
+            <h3>@loan.Book.Title</h3>
+            <img src=@(Random.Shared.Next(1, 10) > 5 ? "book1.jpg" : "book2.jpg") alt="book image" height="100px" width="100px"/>
+            <p>Loan date: @loan.LoanDate</p>
+            @if (loan.ReturnDate == null)
+            {
+                <button class="bth btn-info btn-danger" @onclick="() => { ReturnBook(loan); }">Return</button>
+            }
+            else
+            {
+                <p>Return date: @loan.ReturnDate</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+
+    private List<Loan> _memberLoans = new List<Loan>();
+
+    protected override void OnInitialized()
+    {
+        ReloadLoans();
+    }
+
+    private void ReloadLoans()
+    {
+        try
+        {
+            var userId = Context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            using (WebClient client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+
+                var urlMember = $"{Configuration["ApiBaseUrl"]}/GetMemberByUserId?id=" + userId;
+
+                var response = client.DownloadString(urlMember);
+                var member = JsonConvert.DeserializeObject<Member>(response) ?? new Member();
+
+                var url = $"{Configuration["ApiBaseUrl"]}/GetMemberLoanedBooks?id=" + member.Id;
+                response = client.DownloadString(url);
+                _memberLoans = JsonConvert.DeserializeObject<List<Loan>>(response) ?? new List<Loan>();
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e.Message);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+
+    private void ReturnBook(Loan loan)
+    {
+        loan.ReturnDate = DateTime.Now;
+        try
+        {
+            using (var client = new WebClient())
+            {
+                var apikey = Configuration["ApiKey"] ?? string.Empty;
+                client.Headers["ApiKey"] = apikey;
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                var url = $"{Configuration["ApiBaseUrl"]}/UpdateLoan";
+                var data = JsonConvert.SerializeObject(loan);
+                var response = client.UploadString(url, HttpMethods.Post, data);
+                StateHasChanged();
+                ReloadLoans();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+            NavigationManager.NavigateTo("Error");
+        }
+    }
+
+}

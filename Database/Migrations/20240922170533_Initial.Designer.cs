@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240919184719_Load table update")]
-    partial class Loadtableupdate
+    [Migration("20240922170533_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -101,13 +101,13 @@ namespace Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("LoanDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ReturnDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -137,7 +137,7 @@ namespace Database.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("MembershipDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -168,7 +168,7 @@ namespace Database.Migrations
                         .HasColumnType("real");
 
                     b.Property<DateTime>("ReviewDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 

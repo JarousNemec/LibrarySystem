@@ -45,6 +45,10 @@ public interface IDatabaseService
     Book?[] GetBooksByGenre(Guid id);
 
     Book?[] ReadAllBooks();
+    
+    Genre?[] GetAllGenres();
+
+    Author?[] GetAllAuthors();
 
     Loan?[] GetMemberLoans(Guid memberId);
 
