@@ -11,7 +11,7 @@ COPY ["WebFrontend/WebFrontend.csproj", "WebFrontend/"]
 RUN dotnet restore "WebFrontend/WebFrontend.csproj"
 COPY . .
 WORKDIR "/src/WebFrontend"
-RUN dotnet build "WebFrontend.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build --no-cache "WebFrontend.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
